@@ -47,20 +47,22 @@ class IntercomCamera(Camera):
     def name(self):
         return f"Камера {self._name}"
 
+    
     async def async_camera_image(self, width=None, height=None):
-        try:
-            async with aiohttp.ClientSession() as session:
-                async with session.get(self._preview_url) as response:
-                    if response.status == 200:
-                        _LOGGER.debug(f"Successfully fetched snapshot for {self._name}")
-                        return await response.read()
-                    else:
-                        _LOGGER.error(f"Failed to fetch snapshot, HTTP {response.status}")
-                        return None
-        except Exception as e:
-            _LOGGER.error(f"Error fetching snapshot from {self._preview_url}: {e}")
-            return None
+        """Return a still image from the MP4 stream using FFmpeg."""
+        ffmpeg = self.hass.data["ffmpeg"]
+        ffmpeg_input = self._preview_url
 
+        extra_cmd = "-frames:v 1"  # Получить один кадр
+
+        image = await ffmpeg.async_get_image(
+            ffmpeg_input,
+            output_format="mjpeg",
+            extra_cmd=extra_cmd,
+        )
+        self._last_image = image
+        return image
+        
     async def stream_source(self):
         return self._stream_url
 
