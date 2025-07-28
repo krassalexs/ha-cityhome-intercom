@@ -5,6 +5,9 @@ from datetime import datetime, timezone
 
 _LOGGER = logging.getLogger(__name__)
 
+CAMERA_STREAM_PATH = "/index.fmp4.m3u8?token="
+CAMERA_PREVIEW_PATH = "/preview.mp4?token="
+
 
 class IntercomAPI:
     def __init__(self, base_url="https://dawson.farm.cpx2.ru/mobile/"):
@@ -71,6 +74,20 @@ class IntercomAPI:
                     return result.get("data", [])
                 else:
                     _LOGGER.error(f"Ошибка получения дверей {response.status}")
+                    return []
+
+    async def get_cameras_list(self):
+        if not self.access_token:
+            return {"error": "No access token available"}
+        url = f"{self.base_url}cctv/allTree"
+        payload = {}
+        async with aiohttp.ClientSession(headers=self.headers) as session:
+            async with session.post(url, json=payload, ssl=False) as response:
+                if response.status == 200:
+                    result = await response.json()
+                    return result.get("data", [])
+                else:
+                    _LOGGER.error(f"Ошибка получения камер {response.status}")
                     return []
 
     async def open_door(self, domophone_id, door_id):

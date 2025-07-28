@@ -8,7 +8,7 @@ from .const import DOMAIN, API, PARAM_ACCESS_TOKEN, PARAM_DEVICE_TOKEN
 from .api import IntercomAPI
 
 _LOGGER = logging.getLogger(__name__)
-PLATFORMS = [Platform.BUTTON]
+PLATFORMS = [Platform.BUTTON, Platform.CAMERA]
 
 
 async def async_setup(hass: HomeAssistant, config: dict):
@@ -40,5 +40,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
-    res = (await hass.config_entries.async_forward_entry_unload(entry, Platform.BUTTON))
+    res = (await hass.config_entries.async_forward_entry_unload(entry, Platform.BUTTON) &
+           await hass.config_entries.async_forward_entry_unload(entry, Platform.CAMERA))
     return res
