@@ -1,0 +1,20 @@
+author:
+  email: krassalexs@users.noreply.github.com
+  homepage: https://github.com/krassalexs/ha-cityhome-intercom
+  name: krassalexs
+description: Домофон Город Телеком (CityHome) для Home Assistant
+files:
+  - custom_components/ha-cityhome-intercom/__init__.py
+  - custom_components/ha-cityhome-intercom/api.py
+  - custom_components/ha-cityhome-intercom/consts.py
+  - custom_components/ha-cityhome-intercom/config_flow.py
+  - custom_components/ha-cityhome-intercom/button.py
+keywords:
+  - cityhome
+  - intercom
+  - homeassistant
+  - home-assistant
+  - custom-component
+  - python
+license: MIT License
+name: Домофон Город Телеком (CityHome)

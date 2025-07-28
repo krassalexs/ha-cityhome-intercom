@@ -1,0 +1,11 @@
+{
+  "domain": "cityhome-intercom",
+  "name": "Домофон Город Телеком (CityHome)",
+  "documentation": "https://github.com/krassalexs/ha-cityhome-intercom",
+  "issue_tracker": "https://github.com/krassalexs/ha-cityhome-intercom/issues",
+  "codeowners": ["@krassalex"],
+  "requirements": ["transliterate", "aiohttp>=3.9.3"],
+  "iot_class": "cloud_push",
+  "config_flow": true,
+  "version": "0.0.1"
+}

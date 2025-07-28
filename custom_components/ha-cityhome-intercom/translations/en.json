@@ -1,0 +1,24 @@
+{
+  "config": {
+    "abort": {
+      "already_configured": "Device is already configured"
+    },
+    "error": {
+      "confirmation_failed": "Confirmation failed",
+      "authorization_failed": "Invalid authentication",
+      "unknown": "Unexpected error"
+    },
+    "step": {
+      "user": {
+        "data": {
+          "phone_number": "Phone number"
+        }
+      },
+      "confirm": {
+        "data": {
+          "confirm_code": "Confirm code"
+        }
+      }
+    }
+  }
+}
