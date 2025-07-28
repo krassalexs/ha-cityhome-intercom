@@ -38,6 +38,7 @@ class IntercomCamera(Camera):
         self._name = name
         self._stream_url = camera_url + CAMERA_STREAM_PATH
         self._preview_url = camera_url + CAMERA_PREVIEW_PATH
+        self._last_preview_image = None  # Последнее удачное изображение
 
     @property
     def unique_id(self):
@@ -48,26 +49,37 @@ class IntercomCamera(Camera):
         return f"Камера {self._name}"
 
     async def async_camera_image(self, width=None, height=None):
+        new_image = await self._get_ffmpeg_frame()
+        if new_image:
+            self._last_preview_image = new_image
+        return self._last_preview_image
+
+    async def _get_ffmpeg_frame(self):
         """Получаем кадр из MP4 с помощью FFmpeg через subprocess."""
         ffmpeg_cmd = [
             "ffmpeg",
             "-i", self._preview_url,
-            "-frames:v", "1",  # Берём 1 кадр
+            "-frames:v", "1",  # 1 кадр
             "-f", "image2",  # Формат вывода
-            "-update", "1",  # Обновляем изображение
-            "-",  # Вывод в stdout
+            "-update", "1",  # Обновление
+            "-vf", "scale=640:-1",  # Масштабирование (уменьшает нагрузку)
+            "-q:v", "2",  # Качество JPEG (1-31, где 2 — лучшее)
+            "-",
         ]
 
         try:
-            proc = await asyncio.create_subprocess_exec(
-                *ffmpeg_cmd,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE,
+            proc = await asyncio.wait_for(
+                asyncio.create_subprocess_exec(
+                    *ffmpeg_cmd,
+                    stdout=asyncio.subprocess.PIPE,
+                    stderr=asyncio.subprocess.PIPE,
+                ),
+                timeout=10.0,  # Ждём не больше 10 секунд
             )
             stdout, _ = await proc.communicate()
             return stdout if proc.returncode == 0 else None
-        except Exception as e:
-            _LOGGER.error(f"Ошибка FFmpeg: {e}")
+        except asyncio.TimeoutError:
+            _LOGGER.warning("FFmpeg таймаут: поток не отвечает")
             return None
 
     async def stream_source(self):
