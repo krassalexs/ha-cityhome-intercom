@@ -1,7 +1,5 @@
 import logging
 import aiohttp
-import asyncio
-from datetime import datetime, timezone
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -21,88 +19,74 @@ class IntercomAPI:
         }
         self.token_update_callback = None
 
+    async def _make_request(self, endpoint, payload=None, method="POST"):
+        if not self.access_token and endpoint not in ("user/requestCode", "user/confirmCode"):
+            return {"error": "No access token available"}
+
+        url = f"{self.base_url}{endpoint}"
+
+        async with aiohttp.ClientSession(headers=self.headers) as session:
+            try:
+                if method == "POST":
+                    async with session.post(url, json=payload, ssl=False) as response:
+                        return await self._handle_response(response)
+                elif method == "GET":
+                    async with session.get(url, ssl=False) as response:
+                        return await self._handle_response(response)
+            except aiohttp.ClientError as e:
+                _LOGGER.error(f"Request failed: {e}")
+                return {"error": str(e)}
+
+    @staticmethod
+    async def _handle_response(response):
+        if response.status == 200:
+            return await response.json()
+        elif response.status == 204:  # No Content (например, при открытии двери)
+            return True
+        else:
+            _LOGGER.error(f"Request failed with status {response.status}")
+            return {"error": f"HTTP {response.status}"}
+
     def set_tokens(self, access_token, device_token):
         self.access_token = access_token
         self.device_token = device_token
         self.headers["Authorization"] = f"Bearer {self.access_token}"
 
     async def request_code(self, phone_number):
-        url = f"{self.base_url}user/requestCode"
-        payload = {
-            "userPhone": phone_number
-        }
-
-        async with aiohttp.ClientSession(headers=self.headers) as session:
-            async with session.post(url, json=payload, ssl=False) as response:
-                if response.status == 200:
-                    return True
-                else:
-                    return {"error": f"Authorization failed with status code {response.status}"}
+        """Запрос кода подтверждения"""
+        return await self._make_request(
+            "user/requestCode",
+            {"userPhone": phone_number}
+        )
 
     async def confirm_code(self, phone_number, code, device_token):
-        url = f"{self.base_url}user/confirmCode"
-        payload = {
-            "userPhone": phone_number,
-            "smsCode": code,
-            "deviceToken": device_token
-        }
-
-        async with aiohttp.ClientSession(headers=self.headers) as session:
-            async with session.post(url, json=payload, ssl=False) as response:
-                if response.status == 200:
-                    data = await response.json()
-                    self.set_tokens(
-                        data["data"]["accessToken"],
-                        device_token
-                    )
-                    if self.token_update_callback:
-                        self.token_update_callback(
-                            data["data"]["accessToken"],
-                            device_token
-                        )
-                return await response.json()
+        """Подтверждение кода и получение токенов"""
+        result = await self._make_request(
+            "user/confirmCode",
+            {
+                "userPhone": phone_number,
+                "smsCode": code,
+                "deviceToken": device_token
+            }
+        )
+        if "data" in result:
+            self.set_tokens(result["data"]["accessToken"], device_token)
+        return result
 
     async def get_address_list(self):
-        if not self.access_token:
-            return {"error": "No access token available"}
-        url = f"{self.base_url}address/getAddressList"
-        payload = {}
-        async with aiohttp.ClientSession(headers=self.headers) as session:
-            async with session.post(url, json=payload, ssl=False) as response:
-                if response.status == 200:
-                    result = await response.json()
-                    return result.get("data", [])
-                else:
-                    _LOGGER.error(f"Ошибка получения дверей {response.status}")
-                    return []
+        """Получение списка адресов"""
+        result = await self._make_request("address/getAddressList")
+        return result.get("data", []) if isinstance(result, dict) else []
 
     async def get_cameras_list(self):
-        if not self.access_token:
-            return {"error": "No access token available"}
-        url = f"{self.base_url}cctv/allTree"
-        payload = {}
-        async with aiohttp.ClientSession(headers=self.headers) as session:
-            async with session.post(url, json=payload, ssl=False) as response:
-                if response.status == 200:
-                    result = await response.json()
-                    return result.get("data", [])
-                else:
-                    _LOGGER.error(f"Ошибка получения камер {response.status}")
-                    return []
+        """Получение списка камер"""
+        result = await self._make_request("cctv/allTree")
+        return result.get("data", []) if isinstance(result, dict) else []
 
     async def open_door(self, domophone_id, door_id):
-        if not self.access_token:
-            return {"error": "No access token available"}
-        url = f"{self.base_url}address/openDoor"
-        payload = {
-            "domophoneId": domophone_id,
-            "doorId": door_id
-        }
-        async with aiohttp.ClientSession(headers=self.headers) as session:
-            async with session.post(url, json=payload, ssl=False) as response:
-                if response.status == 204:
-                    return True
-                else:
-                    _LOGGER.error(f"Ошибка открытия двери {response.status}")
-                    return False
-
+        """Открытие двери"""
+        result = await self._make_request(
+            "address/openDoor",
+            {"domophoneId": domophone_id, "doorId": door_id}
+        )
+        return result is True
