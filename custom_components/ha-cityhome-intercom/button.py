@@ -48,7 +48,7 @@ class IntercomDoor(ButtonEntity):
     def device_info(self):
         return {
             "identifiers": {(DOMAIN, self.unique_id)},
-            "name": self._name + ", " + self._address_name,
+            "name": self._name,
             "manufacturer": "Город Телеком",
             "model": "CityHome Intercom",
             "via_device": (DOMAIN, self.unique_id),
