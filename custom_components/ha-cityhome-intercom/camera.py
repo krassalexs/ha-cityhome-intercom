@@ -6,6 +6,7 @@ from homeassistant.components.camera import (
     CameraEntityDescription,
     StreamType,
 )
+from homeassistant.components.ffmpeg import FFmpegFrameManager
 from .const import DOMAIN, API
 from .api import CAMERA_STREAM_PATH, CAMERA_PREVIEW_PATH
 
@@ -15,13 +16,14 @@ _LOGGER = logging.getLogger(__name__)
 async def async_setup_entry(hass, config_entry, async_add_entities):
     entities = []
     api = hass.data[DOMAIN][API]
+    ffmpeg_manager = FFmpegFrameManager(hass)
     response = await api.get_cameras_list()
     cameras = response.get("cameras", [])
 
     for camera in cameras:
         camera_id = camera["id"]
         if camera["url"] is not None:
-            entities.append(IntercomCamera(api, camera_id, camera["name"], camera["url"]))
+            entities.append(IntercomCamera(ffmpeg_manager, api, camera_id, camera["name"], camera["url"]))
 
     async_add_entities(entities, True)
 
@@ -31,11 +33,12 @@ class IntercomCamera(Camera):
     _attr_frontend_stream_type = StreamType.HLS
     _attr_motion_detection_enabled = False
 
-    def __init__(self, api, camera_id: int, name: str, camera_url: str):
+    def __init__(self, ffmpeg_manager, api, camera_id: int, name: str, camera_url: str):
         super().__init__()
         self._api = api
         self._id = camera_id
         self._name = name
+        self._ffmpeg_manager = ffmpeg_manager
         self._stream_url = camera_url + CAMERA_STREAM_PATH
         self._preview_url = camera_url + CAMERA_PREVIEW_PATH
 
@@ -47,21 +50,18 @@ class IntercomCamera(Camera):
     def name(self):
         return f"Камера {self._name}"
 
-    
     async def async_camera_image(self, width=None, height=None):
-        """Return a still image from the MP4 stream using FFmpeg."""
-        ffmpeg = self.hass.data["ffmpeg"]
-        ffmpeg_input = self._preview_url
-
-        extra_cmd = "-frames:v 1"  # Получить один кадр
-
-        image = await ffmpeg.async_get_image(
-            ffmpeg_input,
-            output_format="mjpeg",
-            extra_cmd=extra_cmd,
-        )
-        self._last_image = image
-        return image
+        """Получаем кадр из MP4-потока через FFmpeg."""
+        try:
+            image = await self._ffmpeg.get_image(
+                self._preview_url,
+                output_format="mjpeg",
+                extra_cmd="-frames:v 1 -update 1",
+            )
+            return image
+        except Exception as e:
+            _LOGGER.error(f"Ошибка получения изображения: {e}")
+            return None
         
     async def stream_source(self):
         return self._stream_url
