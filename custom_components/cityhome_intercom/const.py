@@ -2,7 +2,7 @@ import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 
 
-DOMAIN = 'cityhome-intercom'
+DOMAIN = 'cityhome_intercom'
 API = "api"
 CONF_PHONE_NUMBER = "phone_number"
 CONF_CONFIRM_CODE = "confirm_code"

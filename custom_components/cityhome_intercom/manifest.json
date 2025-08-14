@@ -1,5 +1,5 @@
 {
-  "domain": "cityhome-intercom",
+  "domain": "cityhome_intercom",
   "name": "Домофон Город Телеком (CityHome)",
   "documentation": "https://github.com/krassalexs/ha-cityhome-intercom",
   "issue_tracker": "https://github.com/krassalexs/ha-cityhome-intercom/issues",

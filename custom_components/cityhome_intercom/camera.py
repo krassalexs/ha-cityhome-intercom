@@ -74,7 +74,7 @@ class IntercomCamera(Camera):
                     stdout=asyncio.subprocess.PIPE,
                     stderr=asyncio.subprocess.PIPE,
                 ),
-                timeout=10.0,  # Ждём не больше 10 секунд
+                timeout=3.0,  # Ждём не больше 10 секунд
             )
             stdout, _ = await proc.communicate()
             return stdout if proc.returncode == 0 else None

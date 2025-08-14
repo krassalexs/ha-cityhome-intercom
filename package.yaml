@@ -4,11 +4,12 @@ author:
   name: krassalexs
 description: Домофон Город Телеком (CityHome) для Home Assistant
 files:
-  - custom_components/ha-cityhome-intercom/__init__.py
-  - custom_components/ha-cityhome-intercom/api.py
-  - custom_components/ha-cityhome-intercom/consts.py
-  - custom_components/ha-cityhome-intercom/config_flow.py
-  - custom_components/ha-cityhome-intercom/button.py
+  - custom_components/cityhome_intercom/__init__.py
+  - custom_components/cityhome_intercom/api.py
+  - custom_components/cityhome_intercom/consts.py
+  - custom_components/cityhome_intercom/config_flow.py
+  - custom_components/cityhome_intercom/button.py
+  - custom_components/cityhome_intercom/camera.py
 keywords:
   - cityhome
   - intercom
