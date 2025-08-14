@@ -21,7 +21,7 @@ class IntercomFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             self._phone_number = self._sanitize_number(user_input[CONF_PHONE_NUMBER])
 
             response = await self._api.request_code(self._phone_number)
-            if response is not True:
+            if response.get("code", 0) != 200:
                 errors["base"] = "authorization_failed"
             else:
                 return await self.async_step_confirm()
